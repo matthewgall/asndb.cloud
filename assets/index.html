@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>asndb | getting the latest network information for your application</title>
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootswatch/4.1.3/cosmo/bootstrap.min.css" integrity="sha256-4zKxkNktGLVL4hgQsvRI12T+LI8budoDXIk5SaBWq/8=" crossorigin="anonymous" />
+    <style type="text/css">.starter-template{padding:40px 15px;text-align:center}.btn-primary,.navbar-inverse,.panel-primary>.panel-heading{background-color:#0077da}a.navbar-brand{color:#fff}.footer{position:fixed;bottom:0;width:100%;height:60px;background-color:#f5f5f5}.container .text-muted{margin:20px 0;color:#707070}p{color: #000;}</style>
+  </head>
+  <body>
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="/">asndb.network</a>
+        </div>
+      </div>
+    </nav>
+    <div class="container">
+      <div class="starter-template">
+        <h1>Welcome to asndb</h1>
+        <p class="lead">
+          Need information from BGP for your application? asndb.network is for you!
+        </p>
+        <div class="card text-white bg-primary">
+          <div class="card-header">
+            <h5>ip2asn: IP address to autonomous systems number</h5>
+          </div>
+          <div class="card-body text-black bg-white">
+            <p>ip2asn is our IP address to autonomous systems number mapping dataset, updated <strong>hourly</strong></p>
+
+            <p>
+              <strong>to pull the latest data (in json format):</strong><br />
+              <pre>curl https://asndb.network/get/latest/ip.json</pre>
+            </p>
+
+            <p>
+              <strong>to pull the latest data (in dat format):</strong><br />
+              <pre>curl https://asndb.network/get/latest/ip.dat</pre>
+            </p>
+          </div>
+        </div>
+        <p>&nbsp;</p>
+        <div class="card text-white bg-primary">
+          <div class="card-header">
+            <h5>asn2name: autonomous systems number to netname</h5>
+          </div>
+          <div class="card-body text-black bg-white">
+            <p>asn2name is our autonomous systems number mapping to netname dataset, updated <strong>6 hours</strong></p>
+
+            <p>
+              <strong>to pull the latest data (in json format):</strong><br />
+              <pre>curl https://asndb.network/get/latest/asn.json</pre>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <footer class="footer">
+      <div class="container">
+        <p class="text-muted">&copy; <script type="text/javascript">document.write(new Date().getFullYear());</script> asndb.network - This script is written using only <a href="https://cloudflareworkers.com" target="_blank">Cloudflare Workers</a></p>',
+      </div>
+    </footer>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha256-VsEqElsCHSGmnmHXGQzvoWjWwoznFSZc6hs7ARLRacQ=" crossorigin="anonymous"></script>
+  </body>
+</html>

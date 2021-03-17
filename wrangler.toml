@@ -1,0 +1,9 @@
+name = "asndb"
+type = "webpack"
+account_id = "b0d7b9f87b57470ef508f1a511093cae"
+route = "asndb.network/*"
+zone_id = "7c37cd82c1529fcb49c66e21bf64230f"
+kv-namespaces = [
+         { binding = "asndb", id = "97af583cd69f4d7b8a060f8915ee3d24" }
+]
+vars = {S3_ENDPOINT='https://s3.eu-central-1.wasabisys.com', S3_BUCKET='asndb'}
