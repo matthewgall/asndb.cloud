@@ -1,18 +1,28 @@
 {
     "name": "asndb-wrangler",
     "version": "1.0.0",
-    "description": "package for creating workers templates",
-    "main": "index.js",
+    "description": "asndb.network Cloudflare Worker",
+    "type": "module",
+    "main": "src/index.ts",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
-        "format": "prettier --write '**/*.{js,css,json,md}'"
+        "dev": "wrangler dev",
+        "deploy": "wrangler deploy",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "typecheck": "tsc --noEmit",
+        "format": "prettier --write '**/*.{ts,js,css,json,md}'",
+        "types": "wrangler types"
     },
     "author": "Matthew Gall <me@matthewgall.dev>",
     "license": "ISC",
-    "devDependencies": {
-        "prettier": "^1.17.0"
-    },
     "dependencies": {
-        "serverless-cloudflare-workers": "^1.2.0"
+        "itty-router": "^5.0.24"
+    },
+    "devDependencies": {
+        "@cloudflare/vitest-pool-workers": "^0.8.15",
+        "prettier": "^3.8.4",
+        "typescript": "^5.8.3",
+        "vitest": "^3.2.4",
+        "wrangler": "^4.103.0"
     }
 }
