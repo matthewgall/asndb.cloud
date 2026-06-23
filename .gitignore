@@ -1,2 +1,7 @@
 node_modules/
+updater/.venv/
+updater/__pycache__/
+updater/*.pyc
+updater/tmp/
+updater/output/
 .wrangler/
