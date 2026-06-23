@@ -7,6 +7,10 @@ routes = [
     { pattern = "asndb.network/*", zone_id = "7c37cd82c1529fcb49c66e21bf64230f" }
 ]
 
+[observability.logs]
+enabled = true
+invocation_logs = true
+
 [[kv_namespaces]]
 binding = "asndb"
 id = "97af583cd69f4d7b8a060f8915ee3d24"
