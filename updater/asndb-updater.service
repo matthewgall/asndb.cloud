@@ -1,0 +1,12 @@
+[Unit]
+Description=asndb.network data updater
+After=network.target
+
+[Service]
+Type=oneshot
+User=asndb
+Group=asndb
+WorkingDirectory=/opt/asndb-worker/updater
+Environment="UPLOAD_ENDPOINT=https://asndb.network/upload"
+EnvironmentFile=/etc/asndb-worker/updater.env
+ExecStart=python3 /opt/asndb/updater/update.py --tmp-dir /var/tmp/asndb
