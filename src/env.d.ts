@@ -2,8 +2,8 @@ declare global {
     interface Env {
         asndb: KVNamespace
         ASSETS: Fetcher
-        S3_ENDPOINT: string
-        S3_BUCKET: string
+        R2: R2Bucket
+        UPLOAD_TOKEN: string
     }
 }
 

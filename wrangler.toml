@@ -15,6 +15,6 @@ id = "97af583cd69f4d7b8a060f8915ee3d24"
 directory = "assets"
 binding = "ASSETS"
 
-[vars]
-S3_ENDPOINT = "https://s3.eu-central-1.wasabisys.com"
-S3_BUCKET = "asndb"
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "asndb"
