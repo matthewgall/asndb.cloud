@@ -16,8 +16,9 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 from datetime import datetime, timezone
-from ftplib import FTP
+from ftplib import FTP, error_proto, error_temp
 from pathlib import Path
 from urllib.request import urlopen
 
@@ -32,6 +33,10 @@ ASNAME_LINE_RE = re.compile(r'<a .+>AS(?P<code>.+?)\s*</a>\s*(?P<name>.*)', re.U
 # no data is transferred. Can be overridden via the --ftp-timeout flag or the
 # FTP_TIMEOUT environment variable.
 FTP_TIMEOUT_DEFAULT = int(os.environ.get('FTP_TIMEOUT', '300'))
+
+# Number of times to retry the FTP download and seconds to wait between tries.
+FTP_RETRIES_DEFAULT = int(os.environ.get('FTP_RETRIES', '3'))
+FTP_RETRY_DELAY_DEFAULT = int(os.environ.get('FTP_RETRY_DELAY', '5'))
 
 
 def _find_latest_rib(
@@ -63,23 +68,63 @@ def _ftp_download(
     remote_file: str,
     local_file: Path,
     timeout: int = FTP_TIMEOUT_DEFAULT,
+    retries: int = FTP_RETRIES_DEFAULT,
+    retry_delay: int = FTP_RETRY_DELAY_DEFAULT,
 ) -> None:
-    """Download a file from an FTP server."""
+    """Download a file from an FTP server, retrying and resuming on failure."""
     print(f'Downloading ftp://{server}{remote_dir}/{remote_file}')
-    with FTP(server, timeout=timeout) as ftp:
-        ftp.login()
-        ftp.cwd(remote_dir)
-        with local_file.open('wb') as fp:
-            ftp.retrbinary(f'RETR {remote_file}', fp.write)
-    print('Download complete.')
+    last_error: Exception | None = None
+    for attempt in range(1, retries + 1):
+        if attempt > 1:
+            print(f'  retrying download (attempt {attempt}/{retries})...')
+            time.sleep(retry_delay)
+        ftp: FTP | None = None
+        try:
+            ftp = FTP(server, timeout=timeout)
+            ftp.login()
+            ftp.cwd(remote_dir)
+            resume_offset = local_file.stat().st_size if local_file.exists() else 0
+            if resume_offset:
+                print(f'  resuming from byte {resume_offset}')
+            with local_file.open('ab') as fp:
+                ftp.retrbinary(
+                    f'RETR {remote_file}', fp.write, rest=resume_offset
+                )
+            print('Download complete.')
+            return
+        except (TimeoutError, OSError, EOFError, error_temp, error_proto) as exc:
+            last_error = exc
+            print(f'  download attempt {attempt} failed: {exc}')
+        finally:
+            if ftp is not None:
+                # Ignore errors from a half-dead control channel so the
+                # original timeout/socket error is the one that surfaces.
+                with contextlib.suppress(Exception):
+                    ftp.quit()
+    raise RuntimeError(
+        f'Failed to download {remote_file} after {retries} attempt(s)'
+    ) from last_error
 
 
-def download_rib(tmp_dir: Path, timeout: int = FTP_TIMEOUT_DEFAULT) -> Path:
+def download_rib(
+    tmp_dir: Path,
+    timeout: int = FTP_TIMEOUT_DEFAULT,
+    retries: int = FTP_RETRIES_DEFAULT,
+    retry_delay: int = FTP_RETRY_DELAY_DEFAULT,
+) -> Path:
     """Download the latest RouteViews RIB dump."""
     print('Downloading latest RIB dump')
     server, remote_dir, filename = _find_latest_rib(timeout=timeout)
     local_file = tmp_dir / filename
-    _ftp_download(server, remote_dir, filename, local_file, timeout=timeout)
+    _ftp_download(
+        server,
+        remote_dir,
+        filename,
+        local_file,
+        timeout=timeout,
+        retries=retries,
+        retry_delay=retry_delay,
+    )
     return local_file
 
 
@@ -399,6 +444,18 @@ def parse_args() -> argparse.Namespace:
         default=FTP_TIMEOUT_DEFAULT,
         help='Socket timeout in seconds for FTP operations (default: %(default)s)',
     )
+    parser.add_argument(
+        '--ftp-retries',
+        type=int,
+        default=FTP_RETRIES_DEFAULT,
+        help='Number of times to retry the RIB FTP download (default: %(default)s)',
+    )
+    parser.add_argument(
+        '--ftp-retry-delay',
+        type=int,
+        default=FTP_RETRY_DELAY_DEFAULT,
+        help='Seconds to wait between FTP download retries (default: %(default)s)',
+    )
     return parser.parse_args()
 
 
@@ -444,7 +501,12 @@ def main() -> int:
         if args.rib_file:
             rib_file = args.rib_file
         else:
-            rib_file = download_rib(tmp_dir, timeout=args.ftp_timeout)
+            rib_file = download_rib(
+                tmp_dir,
+                timeout=args.ftp_timeout,
+                retries=args.ftp_retries,
+                retry_delay=args.ftp_retry_delay,
+            )
 
         dat_file = tmp_dir / 'ip.dat'
         convert_rib_to_dat(rib_file, dat_file)
