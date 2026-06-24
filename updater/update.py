@@ -27,15 +27,22 @@ from pyasn import mrtx
 ASNAMES_URL = 'http://www.cidr-report.org/as2.0/autnums.html'
 ASNAME_LINE_RE = re.compile(r'<a .+>AS(?P<code>.+?)\s*</a>\s*(?P<name>.*)', re.U)
 
+# Default socket timeout for FTP control/data connections. This guards against
+# stalled RouteViews archive downloads where the control channel stays open but
+# no data is transferred. Can be overridden via the --ftp-timeout flag or the
+# FTP_TIMEOUT environment variable.
+FTP_TIMEOUT_DEFAULT = int(os.environ.get('FTP_TIMEOUT', '300'))
+
 
 def _find_latest_rib(
     server: str = 'archive.routeviews.org',
     archive_root: str = 'route-views4/bgpdata',
     sub_dir: str = 'RIBS',
+    timeout: int = FTP_TIMEOUT_DEFAULT,
 ) -> tuple[str, str, str]:
     """Return (server, remote_dir, filename) for the latest RIB archive."""
     print(f'Finding latest RIB archive on ftp://{server}')
-    with FTP(server) as ftp:
+    with FTP(server, timeout=timeout) as ftp:
         ftp.login()
         months = sorted(ftp.nlst(archive_root), reverse=True)
         for month in months:
@@ -50,10 +57,16 @@ def _find_latest_rib(
     raise RuntimeError('Could not find a recent RIB archive to download')
 
 
-def _ftp_download(server: str, remote_dir: str, remote_file: str, local_file: Path) -> None:
+def _ftp_download(
+    server: str,
+    remote_dir: str,
+    remote_file: str,
+    local_file: Path,
+    timeout: int = FTP_TIMEOUT_DEFAULT,
+) -> None:
     """Download a file from an FTP server."""
     print(f'Downloading ftp://{server}{remote_dir}/{remote_file}')
-    with FTP(server) as ftp:
+    with FTP(server, timeout=timeout) as ftp:
         ftp.login()
         ftp.cwd(remote_dir)
         with local_file.open('wb') as fp:
@@ -61,12 +74,12 @@ def _ftp_download(server: str, remote_dir: str, remote_file: str, local_file: Pa
     print('Download complete.')
 
 
-def download_rib(tmp_dir: Path) -> Path:
+def download_rib(tmp_dir: Path, timeout: int = FTP_TIMEOUT_DEFAULT) -> Path:
     """Download the latest RouteViews RIB dump."""
     print('Downloading latest RIB dump')
-    server, remote_dir, filename = _find_latest_rib()
+    server, remote_dir, filename = _find_latest_rib(timeout=timeout)
     local_file = tmp_dir / filename
-    _ftp_download(server, remote_dir, filename, local_file)
+    _ftp_download(server, remote_dir, filename, local_file, timeout=timeout)
     return local_file
 
 
@@ -282,7 +295,7 @@ def _html_to_asnames(data: str) -> dict[str, str]:
 def download_asnames(json_file: Path) -> None:
     """Download the AS names database from cidr-report."""
     print('Downloading AS names database')
-    with urlopen(ASNAMES_URL) as response:
+    with urlopen(ASNAMES_URL, timeout=60) as response:
         data = response.read().decode('latin-1')
 
     mapping = _html_to_asnames(data)
@@ -380,6 +393,12 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         help='Directory to use for temporary files (defaults to system temp)',
     )
+    parser.add_argument(
+        '--ftp-timeout',
+        type=int,
+        default=FTP_TIMEOUT_DEFAULT,
+        help='Socket timeout in seconds for FTP operations (default: %(default)s)',
+    )
     return parser.parse_args()
 
 
@@ -425,7 +444,7 @@ def main() -> int:
         if args.rib_file:
             rib_file = args.rib_file
         else:
-            rib_file = download_rib(tmp_dir)
+            rib_file = download_rib(tmp_dir, timeout=args.ftp_timeout)
 
         dat_file = tmp_dir / 'ip.dat'
         convert_rib_to_dat(rib_file, dat_file)
