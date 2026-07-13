@@ -19,9 +19,9 @@
         "itty-router": "^5.0.24"
     },
     "devDependencies": {
-        "@cloudflare/vitest-pool-workers": "^0.18.0",
-        "prettier": "^3.9.4",
-        "typescript": "^6.0.3",
+        "@cloudflare/vitest-pool-workers": "^0.18.4",
+        "prettier": "^3.9.5",
+        "typescript": "^7.0.2",
         "vitest": "^4.1.10",
         "wrangler": "^4.103.0"
     }
